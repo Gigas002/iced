@@ -10,6 +10,7 @@ use crate::core::{
     Vector, Widget,
 };
 use iced_renderer::core::ContentFit;
+use iced_renderer::core::RotationLayout;
 
 use std::hash::Hash;
 
@@ -25,6 +26,8 @@ pub struct Viewer<Handle> {
     handle: Handle,
     filter_method: image::FilterMethod,
     content_fit: ContentFit,
+    rotation: f32,
+    rotation_layout: RotationLayout,
 }
 
 impl<Handle> Viewer<Handle> {
@@ -40,7 +43,21 @@ impl<Handle> Viewer<Handle> {
             scale_step: 0.10,
             filter_method: image::FilterMethod::default(),
             content_fit: ContentFit::Contain,
+            rotation: 0.0,
+            rotation_layout: RotationLayout::Change,
         }
+    }
+
+    /// Rotates the [`Viewer`] by the given angle in radians.
+    pub fn rotation(mut self, degrees: f32) -> Self {
+        self.rotation = degrees;
+        self
+    }
+
+    /// Sets the [`RotationLayout`] of the [`Viewer`].
+    pub fn rotation_layout(mut self, rotation_layout: RotationLayout) -> Self {
+        self.rotation_layout = rotation_layout;
+        self
     }
 
     /// Sets the [`image::FilterMethod`] of the [`Viewer`].
@@ -130,8 +147,9 @@ where
             let Size { width, height } = renderer.dimensions(&self.handle);
             Size::new(width as f32, height as f32)
         };
-        let raw_size = limits.resolve(self.width, self.height, image_size);
-        let full_size = self.content_fit.fit(image_size, raw_size);
+        let rotated_size = self.rotation_layout.apply_to_size(image_size, self.rotation);
+        let raw_size = limits.resolve(self.width, self.height, rotated_size);
+        let full_size = self.content_fit.fit(rotated_size, raw_size);
 
         let final_size = Size {
             width: match self.width {
@@ -188,6 +206,8 @@ where
                                 state,
                                 bounds.size(),
                                 self.content_fit,
+                                self.rotation,
+                                self.rotation_layout,
                             );
 
                             let factor = state.scale / previous_scale - 1.0;
@@ -249,6 +269,8 @@ where
                         state,
                         bounds.size(),
                         self.content_fit,
+                        self.rotation,
+                        self.rotation_layout,
                     );
                     let hidden_width = (image_size.width - bounds.width / 2.0)
                         .max(0.0)
@@ -318,41 +340,62 @@ where
         _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_ref::<State>();
+        let img_size = renderer.dimensions(&self.handle);
+        let img_size = Size::new(img_size.width as f32, img_size.height as f32);
+        let rotated_size = self.rotation_layout.apply_to_size(img_size, self.rotation);
+    
         let bounds = layout.bounds();
 
-        let image_size = image_size(
+        let adjusted_fit = image_size(
             renderer,
             &self.handle,
             state,
             bounds.size(),
             self.content_fit,
+            self.rotation,
+            self.rotation_layout,
+        );
+        let scale = Size::new(
+            adjusted_fit.width / rotated_size.width,
+            adjusted_fit.height / rotated_size.height,
         );
 
         let translation = {
             let image_top_left = Vector::new(
-                (bounds.width - image_size.width).max(0.0) / 2.0,
-                (bounds.height - image_size.height).max(0.0) / 2.0,
+                (bounds.width - img_size.width).max(0.0) / 2.0,
+                (bounds.height - img_size.height).max(0.0) / 2.0,
             );
 
-            image_top_left - state.offset(bounds, image_size)
+            image_top_left - state.offset(bounds, img_size)
         };
 
+        let drawing_bounds = match self.content_fit {
+            // TODO: `none` window resizing doesn't work as it should
+            // ContentFit::None => Rectangle {
+            //     width: img_size.width,
+            //     height: img_size.height,
+            //     ..bounds
+            // },
+            _ => Rectangle {
+                width: img_size.width,
+                height: img_size.height,
+                x: bounds.center_x() - img_size.width / 2.0,
+                y: bounds.center_y() - img_size.height / 2.0,
+            }
+        };
+    
         let render = |renderer: &mut Renderer| {
             renderer.with_translation(translation, |renderer| {
-                let drawing_bounds = Rectangle {
-                    width: image_size.width,
-                    height: image_size.height,
-                    ..bounds
-                };
-
                 renderer.draw(
                     self.handle.clone(),
                     self.filter_method,
                     drawing_bounds,
+                    self.rotation,
+                    scale,
                 );
             });
         };
-
+        
         renderer.with_layer(bounds, render);
     }
 }
@@ -425,13 +468,16 @@ pub fn image_size<Renderer>(
     state: &State,
     bounds: Size,
     content_fit: ContentFit,
+    rotation: f32,
+    rotation_layout: RotationLayout,
 ) -> Size
 where
     Renderer: image::Renderer,
 {
     let size = renderer.dimensions(handle);
     let size = Size::new(size.width as f32, size.height as f32);
-    let size = content_fit.fit(size, bounds);
+    let rotated_size = rotation_layout.apply_to_size(size, rotation);
+    let size = content_fit.fit(rotated_size, bounds);
 
     Size::new(size.width * state.scale, size.height * state.scale)
 }
