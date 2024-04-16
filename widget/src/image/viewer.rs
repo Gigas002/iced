@@ -144,7 +144,7 @@ where
         limits: &layout::Limits,
     ) -> layout::Node {
         let image_size = {
-            let Size { width, height } = renderer.dimensions(&self.handle);
+            let Size { width, height } = renderer.measure_image(&self.handle);
             Size::new(width as f32, height as f32)
         };
         let rotated_size = self.rotation_layout.apply_to_size(image_size, self.rotation);
@@ -340,7 +340,7 @@ where
         _viewport: &Rectangle,
     ) {
         let state = tree.state.downcast_ref::<State>();
-        let img_size = renderer.dimensions(&self.handle);
+        let img_size = renderer.measure_image(&self.handle);
         let img_size = Size::new(img_size.width as f32, img_size.height as f32);
         let rotated_size = self.rotation_layout.apply_to_size(img_size, self.rotation);
     
@@ -368,14 +368,15 @@ where
 
             image_top_left - state.offset(bounds, img_size)
         };
-
         let drawing_bounds = match self.content_fit {
             // TODO: `none` window resizing doesn't work as it should
-            // ContentFit::None => Rectangle {
-            //     width: img_size.width,
-            //     height: img_size.height,
-            //     ..bounds
-            // },
+            ContentFit::None => Rectangle {
+                width: img_size.width,
+                height: img_size.height,
+                // ..bounds
+                x: bounds.position().x + (rotated_size.width - img_size.width) / 2.0,
+                y: bounds.position().y + (rotated_size.height - img_size.height) / 2.0,
+            },
             _ => Rectangle {
                 width: img_size.width,
                 height: img_size.height,
@@ -386,7 +387,7 @@ where
     
         let render = |renderer: &mut Renderer| {
             renderer.with_translation(translation, |renderer| {
-                renderer.draw(
+                renderer.draw_image(
                     self.handle.clone(),
                     self.filter_method,
                     drawing_bounds,
@@ -474,7 +475,7 @@ pub fn image_size<Renderer>(
 where
     Renderer: image::Renderer,
 {
-    let size = renderer.dimensions(handle);
+    let size = renderer.measure_image(handle);
     let size = Size::new(size.width as f32, size.height as f32);
     let rotated_size = rotation_layout.apply_to_size(size, rotation);
     let size = content_fit.fit(rotated_size, bounds);
