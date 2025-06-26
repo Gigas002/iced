@@ -73,7 +73,7 @@ impl editor::Editor for Editor {
         buffer.set_text(
             font_system.raw(),
             text,
-            cosmic_text::Attrs::new(),
+            &cosmic_text::Attrs::new(),
             cosmic_text::Shaping::Advanced,
         );
 
@@ -377,6 +377,18 @@ impl editor::Editor for Editor {
                     Edit::Paste(text) => {
                         editor.insert_string(&text, None);
                     }
+                    Edit::Indent => {
+                        editor.action(
+                            font_system.raw(),
+                            cosmic_text::Action::Indent,
+                        );
+                    }
+                    Edit::Unindent => {
+                        editor.action(
+                            font_system.raw(),
+                            cosmic_text::Action::Unindent,
+                        );
+                    }
                     Edit::Enter => {
                         editor.action(
                             font_system.raw(),
@@ -492,7 +504,7 @@ impl editor::Editor for Editor {
 
             for line in buffer.lines.iter_mut() {
                 let _ = line.set_attrs_list(cosmic_text::AttrsList::new(
-                    text::to_attributes(new_font),
+                    &text::to_attributes(new_font),
                 ));
             }
 
@@ -607,7 +619,7 @@ impl editor::Editor for Editor {
         for line in &mut buffer_mut_from_editor(&mut internal.editor).lines
             [current_line..=last_visible_line]
         {
-            let mut list = cosmic_text::AttrsList::new(attributes);
+            let mut list = cosmic_text::AttrsList::new(&attributes);
 
             for (range, highlight) in highlighter.highlight_line(line.text()) {
                 let format = format_highlight(&highlight);
@@ -615,12 +627,12 @@ impl editor::Editor for Editor {
                 if format.color.is_some() || format.font.is_some() {
                     list.add_span(
                         range,
-                        cosmic_text::Attrs {
+                        &cosmic_text::Attrs {
                             color_opt: format.color.map(text::to_color),
                             ..if let Some(font) = format.font {
                                 text::to_attributes(font)
                             } else {
-                                attributes
+                                attributes.clone()
                             }
                         },
                     );

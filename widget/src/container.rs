@@ -377,14 +377,16 @@ where
     fn overlay<'b>(
         &'b mut self,
         tree: &'b mut Tree,
-        layout: Layout<'_>,
+        layout: Layout<'b>,
         renderer: &Renderer,
+        viewport: &Rectangle,
         translation: Vector,
     ) -> Option<overlay::Element<'b, Message, Theme, Renderer>> {
         self.content.as_widget_mut().overlay(
             tree,
             layout.children().next().unwrap(),
             renderer,
+            viewport,
             translation,
         )
     }
@@ -449,6 +451,7 @@ pub fn draw_background<Renderer>(
                 bounds,
                 border: style.border,
                 shadow: style.shadow,
+                snap: style.snap,
             },
             style
                 .background
@@ -590,6 +593,8 @@ pub struct Style {
     pub border: Border,
     /// The [`Shadow`] of the container.
     pub shadow: Shadow,
+    /// Whether the container should be snapped to the pixel grid.
+    pub snap: bool,
 }
 
 impl Style {

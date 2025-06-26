@@ -7,7 +7,7 @@ use iced::widget::{
 use iced::{Center, Element, Fill, Subscription, Theme};
 
 pub fn main() -> iced::Result {
-    iced::application("Styling - Iced", Styling::update, Styling::view)
+    iced::application(Styling::default, Styling::update, Styling::view)
         .subscription(Styling::subscription)
         .theme(Styling::theme)
         .run()
@@ -65,7 +65,7 @@ impl Styling {
         }
     }
 
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<'_, Message> {
         let choose_theme = column![
             text("Theme:"),
             pick_list(Theme::ALL, Some(&self.theme), Message::ThemeChanged)
@@ -165,5 +165,44 @@ impl Styling {
 
     fn theme(&self) -> Theme {
         self.theme.clone()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rayon::prelude::*;
+
+    use iced_test::{Error, simulator};
+
+    #[test]
+    #[ignore]
+    fn it_showcases_every_theme() -> Result<(), Error> {
+        Theme::ALL
+            .par_iter()
+            .cloned()
+            .map(|theme| {
+                let mut styling = Styling::default();
+                styling.update(Message::ThemeChanged(theme));
+
+                let theme = styling.theme();
+
+                let mut ui = simulator(styling.view());
+                let snapshot = ui.snapshot(&theme)?;
+
+                assert!(
+                    snapshot.matches_hash(format!(
+                        "snapshots/{theme}",
+                        theme = theme
+                            .to_string()
+                            .to_ascii_lowercase()
+                            .replace(" ", "_")
+                    ))?,
+                    "snapshots for {theme} should match!"
+                );
+
+                Ok(())
+            })
+            .collect()
     }
 }

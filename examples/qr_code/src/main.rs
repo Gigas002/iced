@@ -7,7 +7,7 @@ use std::ops::RangeInclusive;
 
 pub fn main() -> iced::Result {
     iced::application(
-        "QR Code Generator - Iced",
+        QRGenerator::default,
         QRGenerator::update,
         QRGenerator::view,
     )
@@ -63,7 +63,7 @@ impl QRGenerator {
         }
     }
 
-    fn view(&self) -> Element<Message> {
+    fn view(&self) -> Element<'_, Message> {
         let title = text("QR Code Generator").size(70);
 
         let input =
