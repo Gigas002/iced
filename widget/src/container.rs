@@ -400,9 +400,9 @@ where
     Renderer: core::Renderer + 'a,
 {
     fn from(
-        column: Container<'a, Message, Theme, Renderer>,
+        container: Container<'a, Message, Theme, Renderer>,
     ) -> Element<'a, Message, Theme, Renderer> {
-        Element::new(column)
+        Element::new(container)
     }
 }
 
@@ -712,7 +712,7 @@ pub fn bordered_box(theme: &Theme) -> Style {
         border: Border {
             width: 1.0,
             radius: 5.0.into(),
-            color: palette.background.strong.color,
+            color: palette.background.weak.color,
         },
         ..Style::default()
     }
