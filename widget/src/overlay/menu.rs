@@ -17,7 +17,6 @@ use crate::core::{Element, Shell, Widget};
 use crate::scrollable::{self, Scrollable};
 
 /// A list of selectable options.
-#[allow(missing_debug_implementations)]
 pub struct Menu<
     'a,
     'b,
@@ -73,7 +72,7 @@ where
             padding: Padding::ZERO,
             text_size: None,
             text_line_height: text::LineHeight::default(),
-            text_shaping: text::Shaping::Basic,
+            text_shaping: text::Shaping::default(),
             font: None,
             class,
         }
@@ -369,7 +368,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,

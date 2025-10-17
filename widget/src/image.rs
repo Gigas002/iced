@@ -54,7 +54,6 @@ pub fn viewer<Handle>(handle: Handle) -> Viewer<Handle> {
 /// }
 /// ```
 /// <img src="https://github.com/iced-rs/iced/blob/9712b319bb7a32848001b96bd84977430f14b623/examples/resources/ferris.png?raw=true" width="300">
-#[allow(missing_debug_implementations)]
 pub struct Image<Handle = image::Handle> {
     handle: Handle,
     width: Length,
@@ -386,7 +385,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,

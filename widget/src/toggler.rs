@@ -76,7 +76,6 @@ use crate::core::{
 ///     }
 /// }
 /// ```
-#[allow(missing_debug_implementations)]
 pub struct Toggler<
     'a,
     Message,
@@ -270,7 +269,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,

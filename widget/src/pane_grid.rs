@@ -147,7 +147,6 @@ const THICKNESS_RATIO: f32 = 25.0;
 ///     .into()
 /// }
 /// ```
-#[allow(missing_debug_implementations)]
 pub struct PaneGrid<
     'a,
     Message,
@@ -418,7 +417,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -432,20 +431,19 @@ where
 
         let children = self
             .panes
-            .iter()
-            .copied()
-            .zip(&self.contents)
+            .iter_mut()
+            .zip(&mut self.contents)
             .zip(tree.children.iter_mut())
             .filter_map(|((pane, content), tree)| {
                 if self
                     .internal
                     .maximized()
-                    .is_some_and(|maximized| maximized != pane)
+                    .is_some_and(|maximized| maximized != *pane)
                 {
                     return Some(layout::Node::new(Size::ZERO));
                 }
 
-                let region = regions.get(&pane)?;
+                let region = regions.get(pane)?;
                 let size = Size::new(region.width, region.height);
 
                 let node = content.layout(
@@ -462,23 +460,23 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn widget::Operation,
     ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
             self.panes
-                .iter()
-                .copied()
-                .zip(&self.contents)
+                .iter_mut()
+                .zip(&mut self.contents)
                 .zip(&mut tree.children)
                 .zip(layout.children())
                 .filter(|(((pane, _), _), _)| {
                     self.internal
                         .maximized()
-                        .is_none_or(|maximized| *pane == maximized)
+                        .is_none_or(|maximized| **pane == maximized)
                 })
                 .for_each(|(((_, content), state), layout)| {
                     content.operate(state, layout, renderer, operation);

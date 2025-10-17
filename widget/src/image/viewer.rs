@@ -10,7 +10,6 @@ use crate::core::{
 };
 
 /// A frame that displays an image with the ability to zoom in/out and pan.
-#[allow(missing_debug_implementations)]
 pub struct Viewer<Handle> {
     padding: f32,
     width: Length,
@@ -125,7 +124,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         _tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,

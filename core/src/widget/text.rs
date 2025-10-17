@@ -55,7 +55,6 @@ pub use text::{Alignment, LineHeight, Shaping, Wrapping};
 ///         .into()
 /// }
 /// ```
-#[allow(missing_debug_implementations)]
 pub struct Text<'a, Theme, Renderer>
 where
     Theme: Catalog,
@@ -207,7 +206,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -245,7 +244,7 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         _state: &mut Tree,
         layout: Layout<'_>,
         _renderer: &Renderer,

@@ -68,7 +68,6 @@ use crate::core::{
 ///     button("I am disabled!").into()
 /// }
 /// ```
-#[allow(missing_debug_implementations)]
 pub struct Button<'a, Message, Theme = crate::Theme, Renderer = crate::Renderer>
 where
     Renderer: crate::core::Renderer,
@@ -235,7 +234,7 @@ where
     }
 
     fn layout(
-        &self,
+        &mut self,
         tree: &mut Tree,
         renderer: &Renderer,
         limits: &layout::Limits,
@@ -246,7 +245,7 @@ where
             self.height,
             self.padding,
             |limits| {
-                self.content.as_widget().layout(
+                self.content.as_widget_mut().layout(
                     &mut tree.children[0],
                     renderer,
                     limits,
@@ -256,14 +255,15 @@ where
     }
 
     fn operate(
-        &self,
+        &mut self,
         tree: &mut Tree,
         layout: Layout<'_>,
         renderer: &Renderer,
         operation: &mut dyn Operation,
     ) {
-        operation.container(None, layout.bounds(), &mut |operation| {
-            self.content.as_widget().operate(
+        operation.container(None, layout.bounds());
+        operation.traverse(&mut |operation| {
+            self.content.as_widget_mut().operate(
                 &mut tree.children[0],
                 layout.children().next().unwrap(),
                 renderer,
